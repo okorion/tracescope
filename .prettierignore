@@ -1,0 +1,7 @@
+node_modules/
+web/src/wasm/
+web/dist/
+engine/
+.tools/
+docs/benchmarks/
+package-lock.json

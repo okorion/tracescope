@@ -3,8 +3,12 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "workspaces": ["web"],
-  "engines": { "node": ">=22.12.0" },
+  "workspaces": [
+    "web"
+  ],
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "scripts": {
     "setup": "node scripts/setup-wasm.mjs",
     "build:wasm": "node scripts/build-wasm.mjs",
@@ -14,9 +18,13 @@
     "test:engine": "node scripts/rust.mjs test --manifest-path engine/Cargo.toml --locked",
     "lint:engine": "node scripts/rust.mjs clippy --manifest-path engine/Cargo.toml --all-targets --locked -- -D warnings",
     "fmt:check": "node scripts/rust.mjs fmt --manifest-path engine/Cargo.toml --check",
+    "format:check": "prettier --check web/src web/index.html scripts tests playwright.config.ts",
     "test:e2e": "playwright test",
     "preview": "npm run preview -w web",
     "benchmark": "node scripts/benchmark.mjs"
   },
-  "devDependencies": { "@playwright/test": "1.64.0" }
+  "devDependencies": {
+    "@playwright/test": "1.64.0",
+    "prettier": "3.9.10"
+  }
 }
