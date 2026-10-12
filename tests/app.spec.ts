@@ -26,7 +26,7 @@ const fixture = (id = 9001, name = 'fixture precise request') => ({
 })
 
 test.beforeEach(async ({ page }) => {
-  await page.goto('/')
+  await page.goto('./')
   await expect(page.getByText('Rust engine ready')).toBeVisible()
   await expect(page.locator('.trace-row')).toHaveCount(8)
 })
