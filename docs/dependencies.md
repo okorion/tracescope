@@ -12,7 +12,7 @@
 | 목록 | Rust 페이지네이션 | TanStack Virtual 3.14.15(MIT) 대신 화면 결과만 반환하여 전체 목록 복제를 피함 |
 | 통합 검증 | Playwright 1.64.0 | 실제 Chromium에서 WASM·사용자 흐름 확인 |
 
-React·Vite·plugin-react는 MIT, TypeScript·Playwright는 Apache-2.0, serde·serde_json·wasm-bindgen·js-sys는 MIT OR Apache-2.0다. 개발 도구를 포함한 lockfile은 `npm audit`로 점검한다. 보안 공지를 확인한 사실이 미공개 취약점 부재를 보장하지는 않는다.
+React·Vite·plugin-react는 MIT, TypeScript·Playwright는 Apache-2.0, serde·serde_json·wasm-bindgen·js-sys는 MIT OR Apache-2.0다. 개발 도구를 포함한 npm lockfile은 `npm audit`로 알려진 취약점을 점검한다. 전체 코드 보안 감사와 Rust 의존성 보안 검증은 별도로 수행하지 않았다.
 
 이 제품에는 수집 서버·OTel SDK·전체 Observability 백엔드가 필요하지 않다. OTLP JSON 파일 입력과 로컬 분석에 필요한 범위만 처리한다. 시간 계산은 원본 나노초를 Rust u64로 유지하고, 브라우저에는 문자열과 상대 ms를 반환한다. 인증·네트워크 저장·실시간 스트림 라이브러리는 사용하지 않는다.
 

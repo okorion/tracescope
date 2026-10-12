@@ -23,7 +23,7 @@ OTLP JSON 파일을 열거나 내장 샘플 트래픽을 실행하면 서비스�
 
 ![Span 상세와 실제 시간 Waterfall](docs/screenshots/detail.png)
 
-Waterfall의 막대 위치는 `(span.start - trace.start) / trace.duration`, 폭은 `span.duration / trace.duration`을 기준으로 합니다. 아주 짧거나 0인 Span도 선택할 수 있도록 최소 표시 폭은 0.25%, 시작 위치 상한은 99.8%로 보정합니다. 수치와 원본 나노초는 실제 값을 유지합니다. 병렬 Span의 시간을 더해 요청 지연이라고 표시하지 않습니다. 가장 긴 하위 Span은 병목 후보이며 인과 관계나 exclusive CPU 시간을 증명하지 않습니다.
+Waterfall의 막대 위치는 `(span.start - trace.start) / trace.duration`, 폭은 `span.duration / trace.duration`을 기준으로 합니다. 아주 짧거나 0인 Span도 선택할 수 있도록 최소 표시 폭은 0.25%, 시작 위치 상한은 99.8%로 보정합니다. 수치와 원본 나노초는 실제 값을 유지합니다. 병렬 호출은 시간축에서 겹쳐 표시하며, 하위 Span 중 Duration이 가장 긴 항목을 병목 후보로 보여 줍니다.
 
 ## 로컬 실행
 
@@ -75,8 +75,8 @@ npm run preview
 - 부모가 없거나 관계에 순환이 있더라도 유효한 Span을 잃지 않도록 연결 성분의 시작점을 보완합니다. 다른 Trace의 Link는 강한 참조가 아닙니다.
 - Span/Resource Attributes, Scope, Events, Links와 추가 메타데이터를 보존합니다. 시간 역전·잘못된 ID 등은 건너뛴 개수와 이유를 반환합니다.
 - JSONL은 **비어 있지 않은 한 줄에 완전한 OTLP 요청 하나**입니다. 모든 줄의 문법과 문서 구조를 확인한 뒤 Store를 변경하므로 마지막 줄의 파싱 오류가 앞부분만 반영하지 않습니다.
-- 파일 입력은 UTF-8 기준 32 MiB, 활성 Span은 최대 1,000,000개입니다. 한도를 초과하면 분할 입력 또는 GC가 필요합니다. 이 한도는 모든 장치에서 해당 규모의 응답성을 보장하지 않습니다.
-- Protobuf, Jaeger JSON, snake_case 구조, 단일 Span JSON은 지원하지 않습니다. 지원하지 않는 형식을 성공으로 표시하지 않습니다.
+- 파일 입력은 UTF-8 기준 32 MiB, 활성 Span은 최대 1,000,000개입니다. 한도를 초과하면 분할 입력 또는 GC가 필요합니다. 대량 데이터의 처리 시간·메모리 사용량·화면 지연은 아래 성능 측정 결과에서 확인할 수 있습니다.
+- Protobuf, Jaeger JSON, snake_case 구조, 단일 Span JSON은 지원하지 않으며 가져오기 오류로 안내합니다.
 
 샘플은 API Gateway, Auth, Product, Order, Payment, Database의 합성 요청입니다. 짧은 호출, 분산 호출, DB 지연, 결제 지연, 오류와 누락된 부모를 포함하며 같은 OTLP 파이프라인으로 들어갑니다. 초기에는 작은 데이터만 만들고 대량 샘플은 사용자가 실행합니다.
 
@@ -105,7 +105,7 @@ flowchart LR
   Q -->|bounded DTO JSON| R[React render]
 ```
 
-파일 원문과 파싱 중간 데이터는 입력 처리 동안 일시적으로 중복될 수 있습니다. 경계는 배치 JSON이며 zero-copy를 주장하지 않습니다. Resource와 Scope는 상세 응답에서 공유 테이블로 한 번만 보내고 JavaScript에서는 같은 객체를 참조합니다. 문자열 복사, Rust 직렬화, JS 파싱 비용도 계측에 포함합니다. 큰 단일 파일 파싱과 GC는 현재 메인 스레드에서 동기 실행합니다.
+파일 원문과 파싱 중간 데이터는 입력 처리 동안 일시적으로 중복될 수 있습니다. JS와 WASM 사이에는 배치 JSON을 전달하며, 문자열 복사·Rust 직렬화·JS 파싱이 발생합니다. Resource와 Scope는 상세 응답에서 공유 테이블로 한 번만 보내고 JavaScript에서는 같은 객체를 참조합니다. 입력·조회 API의 전체 호출 시간에는 이 전달·변환 비용도 포함됩니다. 큰 단일 파일 파싱과 GC는 현재 메인 스레드에서 동기 실행합니다.
 
 주요 코드:
 
@@ -182,16 +182,16 @@ Retention은 **원본 Span 시간이 아니라 해당 Trace에 새 Span을 마�
 | Slot bytes estimate | 슬롯 구조체의 예약 용량 추정. 문자열·인덱스·파싱 메모리 등은 제외 |
 | GC Duration | Rust에서 측정한 GC 본체 시간. 별도 전체 호출 시간은 경계 비용 포함 |
 
-Canvas는 전체 슬롯을 DOM으로 만들지 않고 제한된 구간을 그립니다. 선택한 Span → Handle → Slot → 부모·자식 Handle로 연결됩니다. `Marked`는 마지막 완료 GC에서 생존한 occupied 슬롯, `Reclaimed`는 마지막 완료 GC에서 회수되어 아직 재사용되지 않은 슬롯입니다. 실행 중의 GC 애니메이션이나 동시 스냅샷이 아닙니다.
+Canvas는 전체 슬롯을 DOM으로 만들지 않고 제한된 구간을 그립니다. 선택한 Span → Handle → Slot → 부모·자식 Handle로 연결됩니다. `Marked`는 마지막 완료 GC에서 생존한 occupied 슬롯, `Reclaimed`는 마지막 완료 GC에서 회수되어 아직 재사용되지 않은 슬롯입니다. GC가 끝난 뒤 이 상태를 화면에 반영합니다.
 
 ![GC 직전](docs/screenshots/gc-before.png)
 ![GC 후 회수와 Pin 유지](docs/screenshots/gc-after.png)
 
 ### Rust Ownership과 Custom GC를 함께 쓰는 이유
 
-Rust Ownership은 `Span`, 문자열, Vec 등을 안전하게 할당·해제합니다. 이 제품의 GC는 그 위에서 **어떤 Span을 계속 보존할 것인지** 결정하는 도메인 정책입니다. Rust 전체 힙을 대체하는 allocator나 범용 런타임이 아닙니다.
+Rust Ownership은 `Span`, 문자열, Vec 등을 안전하게 할당·해제합니다. 이 제품의 GC는 그 위에서 **어떤 Span을 계속 보존할 것인지** 결정하는 도메인 정책입니다.
 
-Trace별로 모두 해제하기만 하면 되는 경우에는 명시적인 삭제나 Trace별 Arena가 더 단순하고 빠를 수 있습니다. 이 구현은 Root와 참조의 도달 가능성을 직접 관찰하고 검증한다는 요구 때문에 Mark-and-Sweep을 사용합니다. 현재처럼 소유권이 Trace 단위로 분리된 그래프에서 Custom GC가 필수라거나 더 빠르다고 주장하지 않습니다.
+TraceScope는 Root에서 도달 가능한 Span을 보존하고 나머지를 회수하도록 Mark-and-Sweep을 사용합니다. Inspector에서는 이 보존 정책과 슬롯 회수·재사용 과정을 확인할 수 있습니다. Trace의 모든 Span을 함께 해제하는 요구라면 Trace별 저장소를 명시적으로 삭제하는 방식으로 수명을 관리할 수 있습니다.
 
 JavaScript GC는 JavaScript 객체의 도달 가능성을 관리합니다. TraceScope GC는 WASM 안의 Span 슬롯만 관리합니다. Trace 인덱스, 파서 중간 값, 문자열·벡터의 내부 버퍼, WASM 바인딩과 React 상태는 각각 일반 Rust RAII와 JS GC의 책임입니다.
 
@@ -233,7 +233,7 @@ npm run benchmark
 Remove-Item Env:BENCH_MILLION
 ```
 
-Rust와 동등한 JS 저장 엔진을 비교 구현하지 않았으므로 Rust/WASM의 성능 우위는 판정하지 않습니다. 큰 JSON 파싱, 정규화·관계 재구성, 정렬·직렬화, 동기 Sweep이 주 스레드를 점유할 수 있습니다. Worker 도입은 별도 경계 비용과 전송 정책을 측정한 뒤 검토할 대상입니다.
+이번 측정 대상은 Rust/WASM 구현이며, 동일 기능의 JS 저장 엔진이나 명시적 삭제 방식과의 비교 결과는 없습니다. 큰 JSON 파싱, 정규화·관계 재구성, 정렬·직렬화, 동기 Sweep이 주 스레드를 점유할 수 있습니다. Worker 도입은 별도 경계 비용과 전송 정책을 측정한 뒤 검토할 대상입니다.
 
 GitHub Actions는 lockfile을 사용해 Rust 테스트·Clippy·형식 검사·WASM/웹 빌드·Chromium E2E를 통과한 `main`만 Pages에 배포합니다. 배포 주소에서도 WASM 로드와 사용자 흐름을 다시 확인합니다.
 

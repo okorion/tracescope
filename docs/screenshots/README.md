@@ -11,6 +11,6 @@
 | gc-after.png | GC 완료, 1,110개 회수, Pin한 10개 보존 |
 | mobile.png | 390×844 viewport, 초기 합성 샘플 120개, 문서 가로 overflow 없음 |
 
-데스크톱 viewport는 1440×1000이다. Overview는 full-page, Detail과 Inspector는 해당 요소 전체를 캡처했다. GC 전후 이미지의 높이가 다른 이유는 완료 후 결과 비교 패널이 추가되기 때문이다. 두 이미지를 동일한 상태나 동일 높이의 픽셀 차이 검증으로 설명하지 않는다.
+데스크톱 viewport는 1440×1000이다. Overview는 full-page, Detail과 Inspector는 해당 요소 전체를 캡처했다. GC 전후 이미지의 높이가 다른 이유는 완료 후 결과 비교 패널이 추가되기 때문이다. 전후 상태는 화면에 표시된 Span 수·회수량·Pin 유지 여부를 기준으로 비교한다.
 
 재현: `CAPTURE_SCREENSHOTS=1 npm run test:e2e`(POSIX) 또는 PowerShell에서 `$env:CAPTURE_SCREENSHOTS='1'` 설정 후 `npm run test:e2e`를 실행한다. 원본과 캡처 manifest는 별도 로컬 capture-artifacts에도 보존한다.
