@@ -39,6 +39,7 @@ fn otlp_ingest_and_out_of_order_parent_relationships() {
     assert_eq!(detail["spans"][1]["parent"], detail["spans"][0]["handle"]);
     assert_eq!(detail["spans"][1]["offsetMs"], 0.000001);
     assert_eq!(store.collect()["markedCount"], 2);
+    assert_eq!(detail["slowestChildSpan"]["spanId"], "0000000000000002");
 }
 
 #[test]
@@ -503,4 +504,22 @@ fn oversized_service_name_fails_before_amplification() {
     let mut store = Store::new(0.0);
     assert!(store.ingest(&payload.to_string(), "otlp").is_err());
     assert_eq!(store.arena.active, 0);
+}
+
+#[test]
+fn slowest_child_summary_is_trace_wide_and_excludes_root() {
+    let mut store = Store::new(0.0);
+    ingest(
+        &mut store,
+        vec![
+            span(1, 1, None, 0, 1000),
+            span(1, 2, Some(1), 1, 10),
+            span(1, 3, Some(1), 2, 500),
+        ],
+    );
+    let page = store.detail(&id(1), 0, 1);
+    assert_eq!(page["spans"].as_array().unwrap().len(), 1);
+    assert_eq!(page["slowestChildSpan"]["spanId"], "0000000000000003");
+    ingest(&mut store, vec![span(2, 1, None, 0, 1)]);
+    assert!(store.detail(&id(2), 0, 1)["slowestChildSpan"].is_null());
 }

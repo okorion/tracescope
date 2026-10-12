@@ -51,7 +51,7 @@ pub struct Trace {
     pub sample: bool,
     pub missing_parents: usize,
     pub error_span_count: usize,
-    pub slowest_span: Option<SlowestSpan>,
+    pub slowest_child_span: Option<SlowestSpan>,
 }
 
 impl Trace {
@@ -71,7 +71,7 @@ impl Trace {
             sample: false,
             missing_parents: 0,
             error_span_count: 0,
-            slowest_span: None,
+            slowest_child_span: None,
         }
     }
     pub fn duration_ms(&self) -> f64 {

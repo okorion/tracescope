@@ -187,7 +187,7 @@ impl Store {
         trace.end_ns = 0;
         trace.missing_parents = 0;
         trace.error_span_count = 0;
-        trace.slowest_span = None;
+        trace.slowest_child_span = None;
         for handle in &trace.spans {
             let span = self.arena.get_mut(*handle).expect("live trace index");
             span.children.clear();
@@ -207,12 +207,14 @@ impl Store {
             trace.end_ns = trace.end_ns.max(span.end_ns);
             trace.error |= span.is_error();
             trace.error_span_count += usize::from(span.is_error());
-            if trace
-                .slowest_span
-                .as_ref()
-                .is_none_or(|s| span.duration_ms() > s.duration_ms)
+            trace.sample |= span.sample;
+            if span.parent.is_some()
+                && trace
+                    .slowest_child_span
+                    .as_ref()
+                    .is_none_or(|s| span.duration_ms() > s.duration_ms)
             {
-                trace.slowest_span = Some(SlowestSpan {
+                trace.slowest_child_span = Some(SlowestSpan {
                     span_id: span.span_id.clone(),
                     service_name: span.service_name.to_string(),
                     operation_name: span.operation_name.clone(),
@@ -220,7 +222,6 @@ impl Store {
                     handle: *handle,
                 });
             }
-            trace.sample |= span.sample;
         }
         for handle in &trace.spans {
             if let Some(parent) = self.arena.get(*handle).and_then(|span| span.parent)

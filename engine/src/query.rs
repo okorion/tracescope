@@ -168,7 +168,7 @@ impl Store {
         result["roots"] = json!(trace.roots.iter().take(2000).collect::<Vec<_>>());
         result["rootCount"] = json!(trace.roots.len());
         result["errorSpanCount"] = json!(trace.error_span_count);
-        result["slowestSpan"] = json!(trace.slowest_span);
+        result["slowestChildSpan"] = json!(trace.slowest_child_span);
         result["offset"] = json!(offset);
         result["limit"] = json!(limit);
         result
