@@ -1,0 +1,27 @@
+{
+  "resourceSpans": [
+    {
+      "resource": {"attributes": [
+        {"key": "service.name", "value": {"stringValue": "API Gateway"}},
+        {"key": "tracescope.sample", "value": {"boolValue": true}}
+      ]},
+      "scopeSpans": [{"scope": {"name": "tracescope.synthetic", "version": "1.0"}, "spans": [
+        {"traceId": "00000000000000000000000000000001", "spanId": "0000000000000001", "name": "POST /checkout", "kind": 2, "startTimeUnixNano": "1791766800000000001", "endTimeUnixNano": "1791766800520000001", "status": {"code": 2, "message": "payment timed out"}, "attributes": [{"key": "http.request.method", "value": {"stringValue": "POST"}}, {"key": "http.response.status_code", "value": {"intValue": "504"}}]},
+        {"traceId": "00000000000000000000000000000002", "spanId": "0000000000000001", "name": "GET /products", "kind": 2, "startTimeUnixNano": "1791766801000000001", "endTimeUnixNano": "1791766801035000001", "status": {"code": 1}}
+      ]}]
+    },
+    {
+      "resource": {"attributes": [{"key": "service.name", "value": {"stringValue": "Payment Service"}}, {"key": "tracescope.sample", "value": {"boolValue": true}}]},
+      "scopeSpans": [{"scope": {"name": "tracescope.synthetic"}, "spans": [
+        {"traceId": "00000000000000000000000000000001", "spanId": "0000000000000003", "parentSpanId": "0000000000000002", "name": "authorize payment", "kind": 3, "startTimeUnixNano": "1791766800040000001", "endTimeUnixNano": "1791766800510000001", "status": {"code": 2, "message": "synthetic timeout"}, "events": [{"timeUnixNano": "1791766800510000000", "name": "exception", "attributes": [{"key": "exception.type", "value": {"stringValue": "TimeoutError"}}]}], "links": [{"traceId": "00000000000000000000000000000002", "spanId": "0000000000000001"}]}
+      ]}]
+    },
+    {
+      "resource": {"attributes": [{"key": "service.name", "value": {"stringValue": "Order Service"}}, {"key": "tracescope.sample", "value": {"boolValue": true}}]},
+      "scopeSpans": [{"scope": {"name": "tracescope.synthetic"}, "spans": [
+        {"traceId": "00000000000000000000000000000001", "spanId": "0000000000000002", "parentSpanId": "0000000000000001", "name": "create order", "kind": 2, "startTimeUnixNano": "1791766800010000001", "endTimeUnixNano": "1791766800515000001", "status": {"code": 2}},
+        {"traceId": "00000000000000000000000000000003", "spanId": "0000000000000009", "parentSpanId": "0000000000000008", "name": "partial trace / order lookup", "startTimeUnixNano": "1791766802000000001", "endTimeUnixNano": "1791766802020000001", "status": {"code": 0}}
+      ]}]
+    }
+  ]
+}

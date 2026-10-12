@@ -10,4 +10,8 @@ export function run(command, args) {
 }
 export const cargo = existsSync(join(homedir(), '.cargo/bin/cargo.exe'))
   ? join(homedir(), '.cargo/bin/cargo.exe') : 'cargo';
-if (process.argv[1]?.endsWith('rust.mjs')) run(cargo, process.argv.slice(2));
+// On Windows, an already installed GNU toolchain avoids requiring MSVC link.exe.
+// Never change the user's global Rust default.
+export const cargoPrefix = process.platform === 'win32' && existsSync(join(process.env.RUSTUP_HOME || join(homedir(), '.rustup'), 'toolchains/1.99.0-x86_64-pc-windows-gnu'))
+  ? ['+1.99.0-x86_64-pc-windows-gnu'] : [];
+if (process.argv[1]?.endsWith('rust.mjs')) run(cargo, [...cargoPrefix, ...process.argv.slice(2)]);
