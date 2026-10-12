@@ -237,7 +237,7 @@ Rust와 동등한 JS 저장 엔진을 비교 구현하지 않았으므로 Rust/W
 
 GitHub Actions는 lockfile을 사용해 Rust 테스트·Clippy·형식 검사·WASM/웹 빌드·Chromium E2E를 통과한 `main`만 Pages에 배포합니다. 배포 주소에서도 WASM 로드와 사용자 흐름을 다시 확인합니다.
 
-검증 범위: Rust 테스트 27개, Chromium 기능 테스트 9개, 선택형 캡처 시나리오 1개입니다. 기본 E2E 실행에서 캡처 시나리오가 `skipped`로 표시되는 것은 의도된 설정입니다. `CAPTURE_SCREENSHOTS=1`로 실행하면 Overview·상세·Inspector·GC 전후의 실제 화면을 `docs/screenshots/`에 저장합니다. [모바일 화면](docs/screenshots/mobile.png)도 390×844에서 확인했습니다.
+검증 범위: Rust 테스트 27개, Chromium 기능 테스트 10개, 선택형 캡처 시나리오 1개입니다. 기본 E2E 실행에서 캡처 시나리오가 `skipped`로 표시되는 것은 의도된 설정입니다. `CAPTURE_SCREENSHOTS=1`로 실행하면 Overview·상세·Inspector·GC 전후의 실제 화면을 `docs/screenshots/`에 저장합니다. [모바일 화면](docs/screenshots/mobile.png)도 390×844에서 확인했습니다.
 
 ## 현재 범위
 

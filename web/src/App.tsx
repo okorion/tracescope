@@ -87,12 +87,13 @@ export default function App() {
   }, [])
 
   useEffect(() => {
+    if (search === searchQuery) return
     const timer = window.setTimeout(() => {
       setSearchQuery(search)
       setPage(0)
     }, 180)
     return () => window.clearTimeout(timer)
-  }, [search])
+  }, [search, searchQuery])
 
   useEffect(() => {
     if (!engine) return

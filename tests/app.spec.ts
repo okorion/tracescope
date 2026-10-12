@@ -31,6 +31,20 @@ test.beforeEach(async ({ page }) => {
   await expect(page.locator('.trace-row')).toHaveCount(8)
 })
 
+test('initial search debounce cannot reset a newly selected page', async ({ page }) => {
+  const now = new Date('2026-10-12T00:00:00Z')
+  await page.clock.install({ time: now })
+  await page.clock.pauseAt(now)
+  await page.reload()
+  await expect(page.getByText('Rust engine ready')).toBeVisible()
+  await expect(page.locator('.trace-row')).toHaveCount(8)
+  await page.getByRole('button', { name: '다음 트레이스 페이지' }).click()
+  await expect(page.locator('.trace-row')).toHaveCount(4)
+  await page.clock.runFor(250)
+  await expect(page.locator('.trace-row')).toHaveCount(4)
+  await expect(page.getByRole('button', { name: '이전 트레이스 페이지' })).toBeEnabled()
+})
+
 test('WASM startup, real sample, search, filter, sorting and pagination', async ({ page }) => {
   await expect(
     page.locator('.metric-card').filter({ hasText: 'TOTAL TRACES' }).locator('.metric-value'),
