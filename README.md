@@ -147,7 +147,7 @@ flowchart LR
   F --> N[New ingest reuses slot]
 ```
 
-GC는 단일 스레드의 stop-the-world Mark-and-Sweep입니다. 만료되지 않았거나 Pin된 Trace의 Root Handle에서 자식 Handle을 반복형 스택으로 방문합니다. 이미 표시한 객체는 다시 탐색하지 않으므로 순환·중복 참조에 의해 무한 반복하지 않습니다. 남은 객체를 실제로 Drop하고 슬롯을 재사용 가능하게 만듭니다.
+GC는 단일 스레드의 stop-the-world Mark-and-Sweep입니다. 만료되지 않았거나 Pin된 Trace의 Root Handle에서 자식 Handle을 반복형 스택으로 방문합니다. 이미 표시한 객체는 다시 탐색하지 않으므로 순환·중복 참조에 의해 무한 반복하지 않습니다. Mark되지 않은 객체를 실제로 Drop하고 슬롯을 재사용 가능하게 만듭니다.
 
 ```mermaid
 stateDiagram-v2
