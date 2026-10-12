@@ -82,28 +82,31 @@ npm run preview
 
 ## 전체 구조
 
-```mermaid
-flowchart LR
-  UI[React UI] -->|bounded query / command| B[wasm-bindgen]
-  B --> E[Rust Engine]
-  E --> I[Trace index]
-  E --> A[Generational Arena]
-  I -->|root handles| G[Mark-and-Sweep GC]
-  G -->|mark / reclaim| A
-  A --> M[WASM Linear Memory]
-  UI -->|current buffer.byteLength| M
-```
+그림의 아이콘은 실행 역할을, 경계는 브라우저와 Rust/WASM 영역을 나타냅니다. 움직이는 선은 데이터 방향을 보여주는 개념도입니다. [그림 원본·재생성 방법](docs/visuals/README.md)
+
+<picture>
+  <source media="(prefers-reduced-motion: reduce) and (prefers-color-scheme: dark) and (max-width: 600px)" srcset="docs/visuals/architecture-mobile-dark-still.svg" />
+  <source media="(prefers-reduced-motion: reduce) and (max-width: 600px)" srcset="docs/visuals/architecture-mobile-light-still.svg" />
+  <source media="(prefers-reduced-motion: reduce) and (prefers-color-scheme: dark)" srcset="docs/visuals/architecture-dark-still.svg" />
+  <source media="(prefers-reduced-motion: reduce)" srcset="docs/visuals/architecture-light-still.svg" />
+  <source media="(prefers-color-scheme: dark) and (max-width: 600px)" srcset="docs/visuals/architecture-mobile-dark.svg" />
+  <source media="(max-width: 600px)" srcset="docs/visuals/architecture-mobile-light.svg" />
+  <source media="(prefers-color-scheme: dark)" srcset="docs/visuals/architecture-dark.svg" />
+  <img alt="가져온 Trace를 로컬에서 분석" src="docs/visuals/architecture-light.svg" width="100%" />
+</picture>
 
 React는 파일 선택·화면 상태·선택·렌더링을 담당하고 Rust는 정규화·저장·조회·집계·수명을 담당합니다. UI는 Trace 목록의 한 페이지와 선택한 Trace의 제한된 상세만 보유합니다. 원본 전체를 React State에 남기지 않습니다.
 
-```mermaid
-flowchart LR
-  F[OTLP file / synthetic traffic] -->|raw JSON string| P[Parse]
-  P --> N[Normalize IDs and u64 timestamps]
-  N --> S[Arena allocation + Trace index]
-  S --> Q[Filter / sort / aggregate]
-  Q -->|bounded DTO JSON| R[React render]
-```
+<picture>
+  <source media="(prefers-reduced-motion: reduce) and (prefers-color-scheme: dark) and (max-width: 600px)" srcset="docs/visuals/ingest-mobile-dark-still.svg" />
+  <source media="(prefers-reduced-motion: reduce) and (max-width: 600px)" srcset="docs/visuals/ingest-mobile-light-still.svg" />
+  <source media="(prefers-reduced-motion: reduce) and (prefers-color-scheme: dark)" srcset="docs/visuals/ingest-dark-still.svg" />
+  <source media="(prefers-reduced-motion: reduce)" srcset="docs/visuals/ingest-light-still.svg" />
+  <source media="(prefers-color-scheme: dark) and (max-width: 600px)" srcset="docs/visuals/ingest-mobile-dark.svg" />
+  <source media="(max-width: 600px)" srcset="docs/visuals/ingest-mobile-light.svg" />
+  <source media="(prefers-color-scheme: dark)" srcset="docs/visuals/ingest-dark.svg" />
+  <img alt="파일에서 Waterfall까지" src="docs/visuals/ingest-light.svg" width="100%" />
+</picture>
 
 파일 원문과 파싱 중간 데이터는 입력 처리 동안 일시적으로 중복될 수 있습니다. JS와 WASM 사이에는 배치 JSON을 전달하며, 문자열 복사·Rust 직렬화·JS 파싱이 발생합니다. Resource와 Scope는 상세 응답에서 공유 테이블로 한 번만 보내고 JavaScript에서는 같은 객체를 참조합니다. 입력·조회 API의 전체 호출 시간에는 이 전달·변환 비용도 포함됩니다. 큰 단일 파일 파싱과 GC는 현재 메인 스레드에서 동기 실행합니다.
 
@@ -123,14 +126,16 @@ flowchart LR
 
 ## Generational Arena
 
-```mermaid
-flowchart LR
-  H["Handle { index: 7, generation: 3 }"] --> C{generation matches?}
-  C -->|yes| S["slots[7]: generation 3 + Span + mark"]
-  C -->|no| X[Stale handle rejected]
-  S -->|reclaim| F[Free List: index 7]
-  F -->|reuse / generation + 1| N["slots[7]: generation 4 + new Span"]
-```
+<picture>
+  <source media="(prefers-reduced-motion: reduce) and (prefers-color-scheme: dark) and (max-width: 600px)" srcset="docs/visuals/arena-mobile-dark-still.svg" />
+  <source media="(prefers-reduced-motion: reduce) and (max-width: 600px)" srcset="docs/visuals/arena-mobile-light-still.svg" />
+  <source media="(prefers-reduced-motion: reduce) and (prefers-color-scheme: dark)" srcset="docs/visuals/arena-dark-still.svg" />
+  <source media="(prefers-reduced-motion: reduce)" srcset="docs/visuals/arena-light-still.svg" />
+  <source media="(prefers-color-scheme: dark) and (max-width: 600px)" srcset="docs/visuals/arena-mobile-dark.svg" />
+  <source media="(max-width: 600px)" srcset="docs/visuals/arena-mobile-light.svg" />
+  <source media="(prefers-color-scheme: dark)" srcset="docs/visuals/arena-dark.svg" />
+  <img alt="같은 슬롯, 다른 세대" src="docs/visuals/arena-light.svg" width="100%" />
+</picture>
 
 슬롯을 처음 만들면 Span을 담고, 회수하면 `Option<Span>`을 비우고 index를 Free List에 넣습니다. 새 입력은 Free List를 먼저 사용합니다. 재사용 때 generation이 증가하므로 예전 Handle은 같은 index의 새 객체를 가리킬 수 없습니다. Vec의 재할당도 index 기반 Handle을 바꾸지 않습니다.
 
@@ -138,14 +143,16 @@ flowchart LR
 
 ## GC와 객체 수명
 
-```mermaid
-flowchart LR
-  R[Retention / pinned / ingest roots] --> Z[Clear marks]
-  Z --> K[Iterative mark over child handles]
-  K --> S[Sweep unmarked slots]
-  S --> F[Drop Span / Free List]
-  F --> N[New ingest reuses slot]
-```
+<picture>
+  <source media="(prefers-reduced-motion: reduce) and (prefers-color-scheme: dark) and (max-width: 600px)" srcset="docs/visuals/gc-mobile-dark-still.svg" />
+  <source media="(prefers-reduced-motion: reduce) and (max-width: 600px)" srcset="docs/visuals/gc-mobile-light-still.svg" />
+  <source media="(prefers-reduced-motion: reduce) and (prefers-color-scheme: dark)" srcset="docs/visuals/gc-dark-still.svg" />
+  <source media="(prefers-reduced-motion: reduce)" srcset="docs/visuals/gc-light-still.svg" />
+  <source media="(prefers-color-scheme: dark) and (max-width: 600px)" srcset="docs/visuals/gc-mobile-dark.svg" />
+  <source media="(max-width: 600px)" srcset="docs/visuals/gc-mobile-light.svg" />
+  <source media="(prefers-color-scheme: dark)" srcset="docs/visuals/gc-dark.svg" />
+  <img alt="보존할 Trace에서 시작하는 GC" src="docs/visuals/gc-light.svg" width="100%" />
+</picture>
 
 GC는 단일 스레드의 stop-the-world Mark-and-Sweep입니다. 만료되지 않았거나 Pin된 Trace의 Root Handle에서 자식 Handle을 반복형 스택으로 방문합니다. 이미 표시한 객체는 다시 탐색하지 않으므로 순환·중복 참조에 의해 무한 반복하지 않습니다. Mark되지 않은 객체를 실제로 Drop하고 슬롯을 재사용 가능하게 만듭니다.
 
