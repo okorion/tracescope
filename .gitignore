@@ -1,0 +1,11 @@
+node_modules/
+target/
+web/dist/
+web/src/wasm/
+.tools/
+test-results/
+playwright-report/
+output/
+.env*
+*.log
+.DS_Store
